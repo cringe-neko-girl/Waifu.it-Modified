@@ -1,6 +1,7 @@
 import createError from 'http-errors';
 import uvuify from 'owoify-js';
 import Stats from '../../../models/schemas/Stat.js';
+const generateText = uvuify.default;
 
 /**
  * Route handler to get UvUified text.
@@ -20,7 +21,7 @@ const getUvuifyText = async (req, res, next) => {
 
     // UvUify the text and send the response
     res.status(200).json({
-      text: uvuify(text),
+      text: generateText(text, 'uvu'),
     });
 
     // Increment the UvUify counter in the stats
