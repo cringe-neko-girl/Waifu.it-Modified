@@ -1,6 +1,7 @@
 import createError from 'http-errors';
 import owoify from 'owoify-js';
 import Stats from '../../../models/schemas/Stat.js';
+const generateText = owoify.default;
 
 /**
  * Gets the Owofied version of the provided text and updates system statistics.
@@ -38,7 +39,7 @@ const getOwoifyText = async (req, res, next) => {
      * @property {String} text - The Owofied version of the provided text.
      */
     res.status(200).json({
-      text: owoify(text),
+      text: generateText(text),
     });
 
     /**
