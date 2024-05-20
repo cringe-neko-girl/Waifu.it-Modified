@@ -15,14 +15,23 @@ const getQuote = async (req, res, next) => {
      * Extract character parameter from the query
      * @type {string}
      */
-    const { character } = req.query;
+    const { character, anime } = req.query;
 
     /**
      * Create a filter object based on the optional character parameter
      * @type {Object}
      */
-    const filter = character ? { author: character } : {};
-
+    /**
+     * Create a filter object based on the optional character and anime parameters
+     * @type {Object}
+     */
+    const filter = {};
+    if (character) {
+      filter.author = { $regex: character, $options: 'i' };
+    }
+    if (anime) {
+      filter.anime = { $regex: anime, $options: 'i' };
+    }
     /**
      * Aggregate to match the filter, select a random quote, and project excluding version field
      * @type {Array<Object>}
