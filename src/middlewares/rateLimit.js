@@ -23,44 +23,55 @@ import Users from '../models/schemas/User.js';
  */
 const createRateLimiter = () => {
   /**
+   * Default rate limiting options.
    * @typedef {Object} RateLimitOptions
-   * @property {number} [windowMs=60 * 1000] - The time window for which the requests are checked/metered (in milliseconds).
-   * @property {function|number} [max=20] - The maximum number of allowed requests within the windowMs time frame. Can be a function that receives the request object.
-   * @property {string|object} [message] - The message sent in the response when the limit is exceeded.
+   * @property {number} [windowMs=60000] - The time window for which the requests are checked/metered (in milliseconds).
+   * @property {number} [max=20] - The maximum number of allowed requests within the windowMs time frame.
+   * @property {Object} message - The message sent in the response when the limit is exceeded.
    * @property {number} [message.status=429] - The HTTP status code to be set in the response.
    * @property {string} [message.message='You've exhausted your ratelimit, please try again later.'] - The message to be sent in the response.
    */
-
-  /**
-   * @type {RateLimitOptions}
-   */
   const defaultOptions = {
     windowMs: 60 * 1000, // 1 minute
-    max: async (req) => {
-      try {
-        // Get the user's token from the request headers
-        const token = req.headers.authorization;
-
-        // Fetch user data from the database based on the token
-        const user = await Users.findOne({ token });
-
-        // Return the user's rate limit from the database or default to 20 if not found
-        return user ? user.rateLimit : 20;
-      } catch (error) {
-        console.error('Error fetching user data:', error.message);
-        return 20; // Default to 20 if there is an error
-      }
-    },
+    max: 20, // Default rate limit
     message: {
       status: 429,
-      message: 'You\'ve exhausted your ratelimit, please try again later.',
+      message: "You've exhausted your ratelimit, please try again later.",
     },
   };
 
-  // Create and configure the rate limiter middleware
+  // Create rate limiter middleware with default options
   const limiter = rateLimit(defaultOptions);
 
-  return limiter;
+  /**
+   * Express middleware function for rate limiting.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @param {Function} next - Express next function.
+   */
+  return async (req, res, next) => {
+    try {
+      // Extract token from request headers
+      const token = req.headers.authorization;
+
+      // Find user data from the database based on token
+      const user = await Users.findOne({ token });
+
+      // Override default rate limit if user's rate limit is defined
+      if (user && user.rateLimit) {
+        limiter.options.max = user.rateLimit;
+      }
+
+      // Apply rate limiting
+      limiter(req, res, next);
+    } catch (error) {
+      // Handle errors when fetching user data
+      console.error('Error fetching user data:', error.message);
+
+      // Apply rate limiting as a fallback
+      limiter(req, res, next);
+    }
+  };
 };
 
 export default createRateLimiter;
