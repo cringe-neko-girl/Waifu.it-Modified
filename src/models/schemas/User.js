@@ -90,7 +90,10 @@ const UserSchema = new mongoose.Schema({
    * @type {Date}
    * @default Date.now
    */
-  createdAt: { type: Date, default: Date.now() },
+  createdAt: {
+    type: Date,
+    default: () => Date.now(), // Use a function to get the current date
+  },
 
   /**
    * Request rate limit for the user.
