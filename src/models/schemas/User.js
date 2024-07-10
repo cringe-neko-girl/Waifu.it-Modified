@@ -76,7 +76,7 @@ const UserSchema = new mongoose.Schema({
    * @type {number}
    * @default 500
    */
-  req_quota: { type: Number, default: 500 },
+  req_quota: { type: Number, required: true, default: 500 },
 
   /**
    * Number of requests made by the user.
@@ -84,6 +84,13 @@ const UserSchema = new mongoose.Schema({
    * @default 0
    */
   req_count: { type: Number, default: 0 },
+
+  /**
+   * Number of requests consumed by the user.
+   * @type {number}
+   * @default 0
+   */
+  req_consumed: { type: Number, default: 0 },
 
   /**
    * Date and time when the user account was created.
@@ -108,6 +115,42 @@ const UserSchema = new mongoose.Schema({
    * @default ['user']
    */
   roles: { type: [String], default: ['user'] },
+
+  /**
+   * Subscription or plan type.
+   * @type {string}
+   */
+  planType: { type: String, default: 'free' },
+
+  /**
+   * Subscription start date.
+   * @type {Date}
+   */
+  subscriptionStart: { type: Date },
+
+  /**
+   * Subscription end date.
+   * @type {Date}
+   */
+  subscriptionEnd: { type: Date },
+
+  /**
+   * Subscription status.
+   * @type {string}
+   * @enum ['active', 'expired', 'canceled', 'pending', 'suspended', 'trial', 'renewal due', 'grace period']
+   * @default 'active'
+   */
+  subscriptionStatus: {
+    type: String,
+    enum: ['active', 'expired', 'canceled', 'pending', 'suspended', 'trial', 'renewal due', 'grace period'],
+    default: 'active',
+  },
+
+  /**
+   * Metadata for subscription.
+   * @type {object}
+   */
+  subscriptionMetadata: { type: Object },
 });
 
 /**
