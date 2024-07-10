@@ -1192,6 +1192,22 @@ import yesRoutes from './interactions/yes.js';
  */
 router.use('/yes', yesRoutes);
 
+import statsRoutes from './internal/stats.js';
+
+/**
+ * @api {use} v4/stats Use Stats Routes
+ * @apiDescription Mount the stats-related routes for handling interactions.
+ * @apiName UseStatsRoutes
+ * @apiGroup Routes
+ *
+ * @apiSuccess {Object} routes Stats-related routes mounted on the parent router.
+ *
+ * @function createStatsRoutes
+ * @description Creates and returns a set of routes for handling interactions related to Stats.
+ * @returns {Object} Stats-related routes.
+ */
+router.use('/stats', statsRoutes);
+
 /**
  * Exporting the router for use in other parts of the application.
  * @exports {Router} router - Express Router instance with mounted routes.
