@@ -151,6 +151,18 @@ const UserSchema = new mongoose.Schema({
    * @type {object}
    */
   subscriptionMetadata: { type: Object },
+
+  /**
+   * Object to store the count of requests made to each endpoint by the user.
+   * @type {Object}
+   */
+  statistics: {
+    requests: {
+      type: Map,
+      of: Number,
+      default: {},
+    },
+  },
 });
 
 /**

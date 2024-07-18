@@ -20,6 +20,7 @@ const authorize = requiredRole => async (req, res, next) => {
      * Determine the endpoint based on the request URL.
      */
     const endpoint = getEndpointFromUrl(req.originalUrl);
+
     /**
      * Check if the requested endpoint is disabled.
      */
@@ -112,6 +113,11 @@ const authorize = requiredRole => async (req, res, next) => {
     }
 
     /**
+     * Log the user request.
+     */
+    await logUserRequest(userData._id, endpoint);
+
+    /**
      * Increment system stats for successful requests.
      */
     await incrementSystemStats({
@@ -182,6 +188,30 @@ const isEndpointEnabledInStats = async endpoint => {
  */
 const incrementSystemStats = async stats => {
   await Stats.findByIdAndUpdate({ _id: 'systemstats' }, { $inc: stats });
+};
+
+/**
+ * Log the number of requests made by a user to a specific endpoint.
+ *
+ * @param {string} userId - The ID of the user.
+ * @param {string} endpoint - The endpoint being accessed.
+ * @returns {Promise<void>} - Resolves when the log is updated.
+ */
+const logUserRequest = async (userId, endpoint) => {
+  try {
+    // Find the user and update the request count for the specific endpoint
+    await Users.findByIdAndUpdate(
+      userId,
+      {
+        $inc: {
+          [`statistics.requests.${endpoint}`]: 1,
+        },
+      },
+      { new: true, upsert: true }, // Create a new document if it doesn't exist
+    );
+  } catch (error) {
+    console.error('Error logging user request:', error);
+  }
 };
 
 export default authorize;
