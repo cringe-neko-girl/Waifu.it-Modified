@@ -17,6 +17,25 @@ import Stats from '../models/schemas/Stat.js';
 const authorize = requiredRole => async (req, res, next) => {
   try {
     /**
+     * Determine the endpoint based on the request URL.
+     */
+    const endpoint = getEndpointFromUrl(req.originalUrl);
+
+    /**
+     * Check if the requested endpoint is disabled.
+     */
+    const isEndpointEnabled = await isEndpointEnabledInStats(endpoint);
+
+    if (!isEndpointEnabled) {
+      return next(
+        createError(
+          403,
+          `The endpoint '${endpoint}' is currently disabled. Go to https://discord.gg/yyW389c for support.`,
+        ),
+      );
+    }
+
+    /**
      * Extract API key from request headers.
      *
      * @type {string}
@@ -49,6 +68,7 @@ const authorize = requiredRole => async (req, res, next) => {
     const updateData = {
       $inc: {
         req_quota: userData && userData.req_quota > 0 ? -1 : 0,
+        req_consumed: userData && userData.req_quota > 0 ? 1 : 0,
         req_count: userData ? 1 : 0,
       },
     };
@@ -93,6 +113,11 @@ const authorize = requiredRole => async (req, res, next) => {
     }
 
     /**
+     * Log the user request.
+     */
+    await logUserRequest(userData._id, endpoint);
+
+    /**
      * Increment system stats for successful requests.
      */
     await incrementSystemStats({
@@ -114,6 +139,46 @@ const authorize = requiredRole => async (req, res, next) => {
 };
 
 /**
+ * Helper function to extract endpoint from the request URL.
+ *
+ * @param {string} url - The request URL.
+ * @returns {string} - The extracted endpoint.
+ */
+const getEndpointFromUrl = url => {
+  const urlSegments = url.split('/');
+  return urlSegments[urlSegments.length - 1]; // Last segment is assumed to be the endpoint
+};
+
+/**
+ * Helper function to check if the endpoint is enabled in the Stats collection.
+ *
+ * @param {string} endpoint - The endpoint to check.
+ * @returns {Promise<boolean>} - Promise resolving to true if enabled, false otherwise.
+ */
+const isEndpointEnabledInStats = async endpoint => {
+  try {
+    // Assuming 'Stats' is the correct model for endpoint settings
+    const settings = await Stats.findOne();
+
+    // Handle case where settings are not found
+    if (!settings) {
+      return false;
+    }
+
+    // Check if endpoint exists in settings and isEnabled is defined
+    if (settings[endpoint] && typeof settings[endpoint].isEnabled !== 'undefined') {
+      return settings[endpoint].isEnabled;
+    }
+
+    // Default to true if isEnabled is not defined or endpoint doesn't exist
+    return true;
+  } catch (error) {
+    console.error('Error fetching endpoint settings:', error);
+    return true;
+  }
+};
+
+/**
  * Increment the specified statistics in the system stats collection.
  *
  * @function
@@ -123,6 +188,30 @@ const authorize = requiredRole => async (req, res, next) => {
  */
 const incrementSystemStats = async stats => {
   await Stats.findByIdAndUpdate({ _id: 'systemstats' }, { $inc: stats });
+};
+
+/**
+ * Log the number of requests made by a user to a specific endpoint.
+ *
+ * @param {string} userId - The ID of the user.
+ * @param {string} endpoint - The endpoint being accessed.
+ * @returns {Promise<void>} - Resolves when the log is updated.
+ */
+const logUserRequest = async (userId, endpoint) => {
+  try {
+    // Find the user and update the request count for the specific endpoint
+    await Users.findByIdAndUpdate(
+      userId,
+      {
+        $inc: {
+          [`statistics.requests.${endpoint}`]: 1,
+        },
+      },
+      { new: true, upsert: true }, // Create a new document if it doesn't exist
+    );
+  } catch (error) {
+    console.error('Error logging user request:', error);
+  }
 };
 
 export default authorize;

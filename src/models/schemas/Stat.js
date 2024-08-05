@@ -3,12 +3,28 @@ const { Schema, model } = mongoose;
 
 const StatSchema = new Schema({
   _id: { type: String, required: true, default: 'system' },
+  dashboard: {
+    isEnabled: { type: Boolean, default: true },
+  },
+  registrations: {
+    isEnabled: { type: Boolean, default: true },
+  },
+  login: {
+    isEnabled: { type: Boolean, default: true },
+  },
+  tokenReset: {
+    isEnabled: { type: Boolean, default: true },
+  },
+  quote: {
+    isEnabled: { type: Boolean, default: true },
+  },
   total_requests: { type: Number, default: 0 },
   endpoints_requests: { type: Number, default: 0 },
   failed_requests: { type: Number, default: 0 },
   success_requests: { type: Number, default: 0 },
   banned_requests: { type: Number, default: 0 },
   daily_requests: { type: Number, default: 0 },
+  stats: { type: Number, default: 0 },
   run: { type: Number, default: 0 },
   sad: { type: Number, default: 0 },
   shoot: { type: Number, default: 0 },
